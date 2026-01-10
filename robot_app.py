@@ -18,19 +18,40 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 app = Flask(__name__)
 
-bringup_process = None
+# bringup_process = None
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+# @app.route('/launch_bringup', methods=['POST'])
+# def launch_bringup():
+#     try:
+#         global bringup_process
+#         bringup_process = subprocess.Popen([
+#             "ros2", "launch", "omorobot_bringup", "bringup_launch.py"
+#         ], start_new_session=True)
+#         return "bringup successfully", 200
+#     except Exception as e:
+#         return str(e), 500
+
+# @app.route('/cancel_bringup', methods=['POST'])
+# def cancel_bringup():
+#     try:
+#         global bringup_process
+#         os.killpg(os.getpgid(bringup_process.pid), signal.SIGTERM)
+#         return "bringup terminated", 200
+#     except Exception as e:
+#         return str(e), 400
+
 @app.route('/launch_bringup', methods=['POST'])
 def launch_bringup():
     try:
-        global bringup_process
-        bringup_process = subprocess.Popen([
-            "ros2", "launch", "omorobot_bringup", "bringup_launch.py"
-        ], start_new_session=True)
+        subprocess.Popen([
+            "gnome-terminal", "--",
+            "bash", "-c",
+            "echo $$ > /tmp/bringup.pid; ros2 launch omorobot_bringup bringup_launch.py; exec bash"
+        ])
         return "bringup successfully", 200
     except Exception as e:
         return str(e), 500
@@ -38,8 +59,10 @@ def launch_bringup():
 @app.route('/cancel_bringup', methods=['POST'])
 def cancel_bringup():
     try:
-        global bringup_process
-        os.killpg(os.getpgid(bringup_process.pid), signal.SIGTERM)
+        with open('/tmp/bringup.pid', 'r') as f:
+            pid = int(f.read().strip())
+        os.killpg(os.getpgid(pid), signal.SIGTERM)
+        os.remove('/tmp/bringup.pid')
         return "bringup terminated", 200
     except Exception as e:
         return str(e), 400
@@ -102,31 +125,55 @@ def cancel_navigation():
     except Exception as e:
         return str(e), 400
 
-remote_server_ip = 'http://192.168.1.148'
+remote_server_ip = 'http://192.168.1.119'
 
 @app.route('/launch_teleop', methods=['POST'])
 def launch_teleop():
-    requests.post(remote_server_ip + ":9090/launch_teleop")
+    try:
+        requests.post(remote_server_ip + ":9090/launch_teleop", timeout=5)
+        return "launch_teleop request sent", 200
+    except requests.RequestException as e:
+        return f"failed to call remote: {e}", 502
 
 @app.route('/cancel_teleop', methods=['POST'])
 def cancel_teleop():
-    requests.post(remote_server_ip + ":9090/cancel_teleop")
+    try:
+        requests.post(remote_server_ip + ":9090/cancel_teleop", timeout=5)
+        return "cancel_teleop request sent", 200
+    except requests.RequestException as e:
+        return f"failed to call remote: {e}", 502
 
 @app.route('/launch_cartographer_rviz', methods=['POST'])
 def launch_cartographer_rviz():
-    requests.post(remote_server_ip + ":9090/launch_cartographer_rviz")
+    try:
+        requests.post(remote_server_ip + ":9090/launch_cartographer_rviz", timeout=5)
+        return "launch_cartographer_rviz request sent", 200
+    except requests.RequestException as e:
+        return f"failed to call remote: {e}", 502
 
 @app.route('/cancel_cartographer_rviz', methods=['POST'])
 def cancel_cartographer_rviz():
-    requests.post(remote_server_ip + ":9090/cancel_cartographer_rviz")
+    try:
+        requests.post(remote_server_ip + ":9090/cancel_cartographer_rviz", timeout=5)
+        return "cancel_cartographer_rviz request sent", 200
+    except requests.RequestException as e:
+        return f"failed to call remote: {e}", 502
 
 @app.route('/launch_navigation_rviz', methods=['POST'])
 def launch_navigation_rviz():
-    requests.post(remote_server_ip + ":9090/launch_navigation_rviz")
+    try:
+        requests.post(remote_server_ip + ":9090/launch_navigation_rviz", timeout=5)
+        return "launch_navigation_rviz request sent", 200
+    except requests.RequestException as e:
+        return f"failed to call remote: {e}", 502
 
 @app.route('/cancel_navigation_rviz', methods=['POST'])
 def cancel_navigation_rviz():
-    requests.post(remote_server_ip + ":9090/cancel_navigation_rviz")
+    try:
+        requests.post(remote_server_ip + ":9090/cancel_navigation_rviz", timeout=5)
+        return "cancel_navigation_rviz request sent", 200
+    except requests.RequestException as e:
+        return f"failed to call remote: {e}", 502
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
