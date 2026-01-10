@@ -1,48 +1,14 @@
 import os
-import math
-import time
-import rclpy
 import signal
 import requests
-import threading
 import subprocess
-import numpy as np
-from rclpy.node import Node
-from PIL import Image, ImageDraw
-from geometry_msgs.msg import Twist
-from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import OccupancyGrid
-from rclpy.qos import qos_profile_sensor_data
-from rclpy.executors import MultiThreadedExecutor
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 app = Flask(__name__)
 
-# bringup_process = None
-
 @app.route('/')
 def home():
     return render_template('index.html')
-
-# @app.route('/launch_bringup', methods=['POST'])
-# def launch_bringup():
-#     try:
-#         global bringup_process
-#         bringup_process = subprocess.Popen([
-#             "ros2", "launch", "omorobot_bringup", "bringup_launch.py"
-#         ], start_new_session=True)
-#         return "bringup successfully", 200
-#     except Exception as e:
-#         return str(e), 500
-
-# @app.route('/cancel_bringup', methods=['POST'])
-# def cancel_bringup():
-#     try:
-#         global bringup_process
-#         os.killpg(os.getpgid(bringup_process.pid), signal.SIGTERM)
-#         return "bringup terminated", 200
-#     except Exception as e:
-#         return str(e), 400
 
 @app.route('/launch_bringup', methods=['POST'])
 def launch_bringup():
@@ -50,7 +16,7 @@ def launch_bringup():
         subprocess.Popen([
             "gnome-terminal", "--",
             "bash", "-c",
-            "echo $$ > /tmp/bringup.pid; ros2 launch omorobot_bringup bringup_launch.py; exec bash"
+            "echo $$ > /tmp/bringup.pid; ros2 launch omorobot_bringup bringup_launch.py"
         ])
         return "bringup successfully", 200
     except Exception as e:
@@ -61,7 +27,7 @@ def cancel_bringup():
     try:
         with open('/tmp/bringup.pid', 'r') as f:
             pid = int(f.read().strip())
-        os.killpg(os.getpgid(pid), signal.SIGTERM)
+        os.killpg(os.getpgid(pid), signal.SIGINT)
         os.remove('/tmp/bringup.pid')
         return "bringup terminated", 200
     except Exception as e:
@@ -73,7 +39,7 @@ def launch_cartographer():
         subprocess.Popen([
             "gnome-terminal", "--",
             "bash", "-c",
-            "echo $$ > /tmp/cartographer.pid; ros2 launch omorobot_cartographer cartographer_launch.py; exec bash"
+            "echo $$ > /tmp/cartographer.pid; ros2 launch omorobot_cartographer cartographer_launch.py"
         ])
         return "cartographer successfully", 200
     except Exception as e:
@@ -84,7 +50,7 @@ def cancel_cartographer():
     try:
         with open('/tmp/cartographer.pid', 'r') as f:
             pid = int(f.read().strip())
-        os.killpg(os.getpgid(pid), signal.SIGTERM)
+        os.killpg(os.getpgid(pid), signal.SIGINT)
         os.remove('/tmp/cartographer.pid')
         return "cartographer terminated", 200
     except Exception as e:
